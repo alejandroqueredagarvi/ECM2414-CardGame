@@ -152,7 +152,7 @@ public class Player implements Runnable {
 
                                 Card discardCard = chooseCardToDiscard();
                                 hand.remove(discardCard);
-                           
+                                rightDeck.addCard(discardCard);
                                 writer.write("player " + playerID + " discards a " + discardCard.getValue() + " to deck " + rightDeck.getId());
                                 writer.newLine();
 
@@ -208,7 +208,7 @@ public class Player implements Runnable {
 
             // Main gameplay loop
             while (!gameOver) {
-               drawAndDiscard(writer);
+               drawAndDiscard();
                 Thread.sleep(10); // Ensures true concurrent execution without starving other threads
             }
 
