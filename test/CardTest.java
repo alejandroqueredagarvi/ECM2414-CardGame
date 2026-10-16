@@ -1,7 +1,7 @@
 // CardTest.java
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for the Card class.
@@ -19,9 +19,11 @@ public class CardTest {
     /**
      * Tests the constructor with an invalid value and expects an IllegalArgumentException to be thrown.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorInvalidValue() {
-        new Card(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Card(-1);
+        });
     }
 
     /**

@@ -1,3 +1,5 @@
+// PlayerTest.java
+
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,6 +18,17 @@ public class PlayerTest {
         // Reset static game state before each test to guarantee test isolation
         Player.resetGame();
     }
+
+    /**
+     * Cleans up any temporary files created during the tests.
+     * 
+     * @throws IOException
+     */
+    @AfterEach
+    public void tearDown() throws IOException {
+        
+    }
+
 
     /**
      * Tests that cards can be added to the hand.
@@ -62,7 +75,7 @@ public class PlayerTest {
      * Test the preferred card discard strategy. The player should discard the non-preferred card when possible.
      */
     @Test
-    public void testPreferredCardStrategy() {
+    public void testPreferredCardStrategy() throws IOException {
 
         CardDeck left = new CardDeck(3);
         CardDeck right = new CardDeck(4);
@@ -74,7 +87,7 @@ public class PlayerTest {
         p.addCardToHand(new Card(5)); // Only non-preferred card
 
         // Choose card to discard
-        left.addCard(2);
+        left.addCard(new Card(2));
         p.drawAndDiscard(); // Simulate a turn where the player draws and discards
         Card discarded = right.drawCard();
         assertNotNull(discarded, "The discarded card should not be null.");
@@ -85,7 +98,7 @@ public class PlayerTest {
      */
     @Test
 
-    public void testDiscardWhenAllCardsArePreferred() {
+    public void testDiscardWhenAllCardsArePreferred() throws IOException {
         CardDeck left = new CardDeck(3);
         CardDeck right = new CardDeck(4);
         Player p = new Player(1, left, right);
@@ -95,7 +108,7 @@ public class PlayerTest {
         p.addCardToHand(new Card(1));
         p.addCardToHand(new Card(1));
 
-        left.addCard(1);
+        left.addCard(new Card(1));
         p.drawAndDiscard(); // Simulate a turn where the player draws and discards
         Card discarded = right.drawCard();
         assertNotNull(discarded, "Player must select a card even if all cards are preferred to prevent game stagnation.");

@@ -1,7 +1,11 @@
 // CardDeckTest.java
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,10 +59,12 @@ public class CardDeckTest {
     /**
      * Tests that adding a null card to the deck throws an IllegalArgumentException.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddNullCard() {
         CardDeck d = new CardDeck(1);
-        d.addCard(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            d.addCard(null);
+        });
     }
 
     /**
@@ -128,7 +134,8 @@ public class CardDeckTest {
     /**
      * Tests the thread-safety of CardDeck by concurrent adding from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentAdd() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numThreads = 10;
@@ -168,7 +175,8 @@ public class CardDeckTest {
    /**
      * Tests the thread-safety of CardDeck by concurrent drawing from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentDraw() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numThreads = 10;
@@ -214,7 +222,8 @@ public class CardDeckTest {
     /**
      * Tests the thread-safety of CardDeck by concurrent adding and drawing from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentAddAndDraw() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numAdders = 5;
