@@ -111,7 +111,7 @@ public class Player implements Runnable {
      * Handles winning operations: updating global flags, printing to terminal,
      * and writing winning details to the output file.
      */
-    private void declareWin(BufferedWriter writer) throws IOException {
+    private void declareWin() throws IOException {
         synchronized (Player.class) {
             if (gameOver) {
                 return; // In the case two players win simultaneously, the first to acquire the lock will declare victory.
@@ -121,12 +121,14 @@ public class Player implements Runnable {
         }
         System.out.println("player " + playerID + " wins");
 
-        writer.write("player " + playerID + " wins");
-        writer.newLine();
-        writer.write("player " + playerID + " exits");
-        writer.newLine();
-        writer.write("player " + playerID + " final hand: " + getHandString());
-        writer.newLine();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+            writer.write("player " + playerID + " wins");
+            writer.newLine();
+            writer.write("player " + playerID + " exits");
+            writer.newLine();
+            writer.write("player " + playerID + " final hand: " + getHandString());
+            writer.newLine();
+        }
     }
 
     /*
@@ -148,10 +150,9 @@ public class Player implements Runnable {
                         Card drawnCard = leftDeck.drawCard();
                         if (drawnCard != null) {
                             hand.add(drawnCard);
-                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
                                 writer.write("player " + playerID + " draws a " + drawnCard.getValue() + " from deck " + leftDeck.getId());
                                 writer.newLine();
-
                                 Card discardCard = chooseCardToDiscard();
                                 hand.remove(discardCard);
                                 rightDeck.addCard(discardCard);
@@ -160,10 +161,9 @@ public class Player implements Runnable {
 
                                 writer.write("player " + playerID + " current hand is " + getHandString());
                                 writer.newLine();
-
-                                if (checkWinCondition()) {
-                                    declareWin(writer);
-                                }
+                            }
+                            if (checkWinCondition()) {
+                                declareWin();
                             }
                         } else {
                             return; // If the draw deck is empty, skip this turn
@@ -196,32 +196,36 @@ public class Player implements Runnable {
      */
     @Override
     public void run() {
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            // Write initial hand to output file
-            writer.write("player " + playerID + " initial hand " + getHandString());
-            writer.newLine();
+        try {
+            // Write initial hand to output file opening and closing the stream
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                writer.write("player " + playerID + " initial hand " + getHandString());
+                writer.newLine();
+            }
 
             // Check if the initial hand is already a winning hand
             if (checkWinCondition()) {
-                declareWin(writer);
+                declareWin();
                 return;
             }
 
-            // Main gameplay loop
+            // Main gameplay loop - sin escritores globales que retengan el I/O
             while (!gameOver) {
-               drawAndDiscard();
+                drawAndDiscard();
                 Thread.sleep(10); // Ensures true concurrent execution without starving other threads
             }
 
             // Handle game exit when another player wins
             if (gameOver && winnerID != playerID) {
-                writer.write("player " + winnerID + " has informed player " + playerID + " that player " + winnerID + " has won");
-                writer.newLine();
-                writer.write("player " + playerID + " exits");
-                writer.newLine();
-                writer.write("player " + playerID + " hand: " + getHandString());
-                writer.newLine();
+                // Abre el archivo una última vez para el mensaje de derrota
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+                    writer.write("player " + winnerID + " has informed player " + playerID + " that player " + winnerID + " has won");
+                    writer.newLine();
+                    writer.write("player " + playerID + " exits");
+                    writer.newLine();
+                    writer.write("player " + playerID + " hand: " + getHandString());
+                    writer.newLine();
+                }
             }
 
         } catch (IOException | InterruptedException e) {
