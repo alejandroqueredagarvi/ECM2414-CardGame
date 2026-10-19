@@ -259,6 +259,91 @@ public class CardGameTest {
     }
 
     /**
+     * Tests that the output of a deterministic game is as expected.
+     * 
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    public void testOutputExample() throws IOException, InterruptedException {
+        // 1. Make the deterministic pack
+        List<String> customPack = java.util.Arrays.asList(
+            // Player hands
+            "1", "2", "3", "4",  // Round 1: Preferred card for all
+            "1", "2", "3", "4",  // Round 2: Preferred card for all
+            "8", "2", "3", "4",  // Round 3: P1 gets a non-preferred card, the rest get their preferred card
+            "8", "8", "8", "8",  // Round 4: Everyone gets a non-preferred card
+            
+            // Decks
+            "1", "8", "8", "8",  // Round 1: D1 gets a '1'
+            "1", "8", "8", "8",  // Ronda 2: D1 gets a '1'
+            "8", "8", "8", "8",  // Round 3
+            "8", "8", "8", "8"   // Round 4
+        );
+
+        CardGame game = createGameWithPack(customPack);
+        game.distributeCards();
+
+        // 2. Start the game
+        game.startGame();
+
+        // 3. Verify sequentially (player 1)
+        Path p1Path = Path.of("player1_output.txt");
+        assertTrue(Files.exists(p1Path), "The player 1 output file must exist.");
+        List<String> p1Lines = Files.readAllLines(p1Path);
+
+        assertEquals(10, p1Lines.size(), "The player 1 output file must contain exactly 10 lines.");
+
+        // Initial hand
+        assertEquals("player 1 initial hand 1 1 8 8", p1Lines.get(0));
+        
+        // Round 1
+        assertEquals("player 1 draws a 1 from deck 1", p1Lines.get(1));
+        assertEquals("player 1 discards a 8 to deck 2", p1Lines.get(2));
+        assertEquals("player 1 current hand is 1 1 8 1", p1Lines.get(3));
+        
+        // Round 2
+        assertEquals("player 1 draws a 1 from deck 1", p1Lines.get(4));
+        assertEquals("player 1 discards a 8 to deck 2", p1Lines.get(5));
+        assertEquals("player 1 current hand is 1 1 1 1", p1Lines.get(6));
+        
+        // Ending
+        assertEquals("player 1 wins", p1Lines.get(7));
+        assertEquals("player 1 exits", p1Lines.get(8));
+        assertEquals("player 1 final hand: 1 1 1 1", p1Lines.get(9));
+
+        // 4. Verify sequentially (other players - we choose player3)
+        Path p3Path = Path.of("player3_output.txt");
+        List<String> p3Lines = Files.readAllLines(p3Path);
+        int p3Size = p3Lines.size();
+
+        assertTrue(p3Size >= 4, "The player 3 output file must contain at least the initial and final lines (4 total).");
+        assertEquals(0, (p3Size - 4) % 3, 
+            "The intermediate text blocks must include 3 lines (draw, discard, hand).");
+
+        // Initial hand
+        assertEquals("player 3 initial hand 3 3 3 8", p3Lines.get(0));
+
+        // Intermediate turns
+        int turnCount = (p3Size - 4) / 3;
+        for (int turn = 0; turn < turnCount; turn++) {
+            int lineOffset = 1 + (turn * 3);
+
+            assertEquals("player 3 draws a 8 from deck 3", p3Lines.get(lineOffset));
+
+            assertEquals("player 3 discards a 8 to deck 4", p3Lines.get(lineOffset + 1));
+
+            assertEquals("player 3 current hand is 3 3 3 8", p3Lines.get(lineOffset + 2));
+        }
+
+        // Ending
+        assertEquals("player 1 has informed player 3 that player 1 has won", p3Lines.get(p3Size - 3));
+        assertEquals("player 3 exits", p3Lines.get(p3Size - 2));
+
+        assertEquals("player 3 hand: 3 3 3 8", p3Lines.get(p3Size - 1)); 
+    }
+
+    /**
      * Helper method to create a temporary pack file with specified card values.
      * 
      * @param cardValues list of card values to write to the temporary pack file.

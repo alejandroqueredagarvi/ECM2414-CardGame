@@ -106,6 +106,8 @@ public class CardGame {
      * Starts player threads and waits for all threads to terminate.
      */
     public void startGame() {
+        Player.resetGame();
+        
         for (Player player : players) {
             Thread thread = new Thread(player, "Player-" + player.getPlayerID());
             playerThreads.add(thread);
