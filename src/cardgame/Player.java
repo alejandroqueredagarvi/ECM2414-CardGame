@@ -230,7 +230,7 @@ public class Player implements Runnable {
                 return;
             }
 
-            // Main gameplay loop - sin escritores globales que retengan el I/O
+            // Main gameplay loop 
             while (!gameOver) {
                 drawAndDiscard();
                 Thread.sleep(10); // Ensures true concurrent execution without starving other threads
@@ -238,7 +238,7 @@ public class Player implements Runnable {
 
             // Handle game exit when another player wins
             if (gameOver && winnerID != playerID) {
-                // Abre el archivo una última vez para el mensaje de derrota
+                
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
                     writer.write("player " + winnerID + " has informed player " + playerID + " that player " + winnerID + " has won");
                     writer.newLine();
