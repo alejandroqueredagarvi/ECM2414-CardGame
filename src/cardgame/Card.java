@@ -1,5 +1,7 @@
 // Card.java
 
+package cardgame;
+
 /**
  * Thread-safe class that represents a card with a non-negative integer value.
  */

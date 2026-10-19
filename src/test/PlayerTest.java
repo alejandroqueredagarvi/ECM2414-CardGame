@@ -1,9 +1,18 @@
+// PlayerTest.java
+
+package test;
+
 import org.junit.jupiter.api.*;
+
+import cardgame.Card;
+import cardgame.CardDeck;
+import cardgame.Player;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -11,10 +20,22 @@ import java.util.List;
  */
 public class PlayerTest {
 
+    /**
+     * Reset static game state before each test to guarantee test isolation.
+     */
     @BeforeEach
     public void setUp() {
-        // Reset static game state before each test to guarantee test isolation
         Player.resetGame();
+    }
+
+    /**
+     * Clean up any generated output files after each test to maintain a clean test environment.
+     * @throws IOException 
+     */
+    @AfterEach
+    public void tearDown() throws IOException {
+        // Removes the file generated in testOutputFileCreation()
+        Files.deleteIfExists(Path.of("player1_output.txt"));
     }
 
     /**
@@ -41,7 +62,6 @@ public class PlayerTest {
     /**
      * Test the winning hand detection (four identical cards).
      *
-     *
      * @throws IOException
      */
     @Test
@@ -58,8 +78,9 @@ public class PlayerTest {
         assertTrue(p.checkWinCondition(), "Player should have a winning hand with four identical cards.");
     }
     
-     /**
-     * Test the preferred card discard strategy. The player should discard the non-preferred card when possible.
+    /**
+     * Test the preferred card discard strategy. 
+     * The player should discard the non-preferred card when possible.
      */
     @Test
     public void testPreferredCardStrategy() throws IOException {
@@ -80,8 +101,9 @@ public class PlayerTest {
         assertNotNull(discarded, "The discarded card should not be null.");
         assertEquals(5, discarded.getValue(), "Player should discard card 5 (non-preferred) to keep preferred cards (2).");
     }
+
     /**
-     * Discard strategy when hand contains only preferred cards
+     * Discard strategy when hand contains only preferred cards.
      */
     @Test
 
@@ -101,8 +123,9 @@ public class PlayerTest {
         assertNotNull(discarded, "Player must select a card even if all cards are preferred to prevent game stagnation.");
         assertEquals(1, discarded.getValue(), "Discarded card value should be 1.");
     }
+
     /**
-     * Draw and discard action maintains 4 cards in hand: It's atomic
+     * Draw and discard action maintains 4 cards in hand: It's atomic.
      */
     @Test
     public void testAtomicDrawAndDiscardHandInvariant() throws IOException {
@@ -125,8 +148,9 @@ public class PlayerTest {
         assertEquals(4, p.getHand().size(), "Hand must retain exactly 4 cards after atomic draw-and-discard.");
         assertEquals(1, right.getSize(), "Right deck (right) should receive the discarded card.");
     }
+
     /**
-     * Tests that the output file is generated correctly and contains expected content
+     * Tests that the output file is generated correctly and contains expected content.
      */
     @Test
     public void testOutputFileCreation() throws IOException {
@@ -147,10 +171,10 @@ public class PlayerTest {
         } catch (InterruptedException e) {
             fail("Player thread was interrupted.");
         }
-        File file = new File("player1_output.txt");
-        assertTrue(file.exists(), "player1_output.txt must be generated upon execution.");
+        Path path = Path.of("player1_output.txt");
+        assertTrue(Files.exists(path), "player1_output.txt must be generated upon execution.");
 
-        List<String> lines = Files.readAllLines(file.toPath());
+        List<String> lines = Files.readAllLines(path);
         assertFalse(lines.isEmpty(), "Player output file should not be empty.");
         assertTrue(lines.get(0).contains("player 1 initial hand"), "First line must record initial hand.");
     }

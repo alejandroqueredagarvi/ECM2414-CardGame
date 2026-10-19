@@ -1,8 +1,10 @@
+// CardGame.java
+
+package cardgame;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.BufferedWriter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ public class CardGame {
      */
     public CardGame(int numPlayers, List<Integer> pack) {
         this.numPlayers = numPlayers;
-        this.pack = pack;
+        this.pack = new ArrayList<>(pack); // Protective copy to prevent external modification
         this.decks = new ArrayList<>();
         this.players = new ArrayList<>();
         this.playerThreads = new ArrayList<>();
@@ -47,30 +49,34 @@ public class CardGame {
             players.add(new Player(i, leftDeck, rightDeck));
         }
     }
-    /*
-        Returns the number of players in the game.
-        @return the number of players.
-    */
-   
+    
+    /**
+     * Returns the number of players in the game.
+     *
+     * @return the number of players.
+     */
     public int getNumPlayers() {
         return numPlayers;
     }
+
     /**
-     * Gets a protective copy of the players list 
-     * @return A new List containing the Player instances.
+     * Gets a protective copy of the players list. 
+     * 
+     * @return a new List containing the Player instances.
      */
     public List<Player> getPlayers() {
         return new ArrayList<>(this.players);
     }
 
     /**
-     * Gets a protective copy of the decks list
+     * Gets a protective copy of the decks list.
      *
-     * @return A new List containing the CardDeck instances.
+     * @return a new List containing the CardDeck instances.
      */
     public List<CardDeck> getDecks() {
         return new ArrayList<>(this.decks);
     }
+
     /**
      * Distributes cards in round-robin order to player hands and decks.
      */
@@ -124,11 +130,10 @@ public class CardGame {
      */
     private void writeDeckOutputs() {
         for (CardDeck deck : decks) {
-            String filename = "deck" + deck.getId() + "_output.txt";
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
-                writer.write("deck" + deck.getId() + " contents: " + deck.toString());
+            try {
+                deck.writeOutput(); 
             } catch (IOException e) {
-                System.err.println("Error writing " + filename + ": " + e.getMessage());
+                System.err.println("Error writing deck output: " + e.getMessage());
             }
         }
     }
@@ -170,6 +175,12 @@ public class CardGame {
         return cards;
     }
 
+    /**
+     * Main entry point for the card game simulation.
+     * Handles user input for player count and pack file, then starts the game.
+     *
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         int n = 0;

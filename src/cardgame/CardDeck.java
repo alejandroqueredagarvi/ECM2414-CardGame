@@ -1,5 +1,10 @@
 // CardDeck.java
 
+package cardgame;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -76,6 +81,19 @@ public class CardDeck {
     }
 
     /**
+     * Writes the current contents of the deck to an output file named "deck<ID>_output.txt".
+     * Synchronized to ensure that the data is up to date.
+     * 
+     * @throws IOException
+     */
+    public synchronized void writeOutput() throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("deck" + id + "_output.txt"))) {
+            writer.write("deck" + id + " contents: " + contentsAsString());
+            writer.newLine(); // End of line for better readability in the output file
+        }
+    }
+
+    /**
      * Returns the contents of the deck as a space-separated string.
      * Synchronized to avoid ConcurrentModificationException if another thread
      * tries to add or draw cards while this iterator is traversing the list.
@@ -84,13 +102,10 @@ public class CardDeck {
      */
     public synchronized String contentsAsString() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < cards.size(); i++) {
-            sb.append(cards.get(i).getValue());
-            if (i < cards.size() - 1) {
-                sb.append(" ");
-            }
+        for (Card c : cards) {
+            sb.append(c.getValue()).append(" ");
         }
-        return sb.toString();
+        return sb.toString().trim(); // Remove the last space for cleaner output
     }
 
     /**

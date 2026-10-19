@@ -1,6 +1,0 @@
-player 1 draws a 1 from deck 3
-player 1 discards a 1 to deck 4
-player 1 current hand is 1 1 1 1
-player 1 wins
-player 1 exits
-player 1 final hand: 1 1 1 1

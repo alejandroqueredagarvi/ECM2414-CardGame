@@ -1,5 +1,7 @@
 // Player.java
 
+package cardgame;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,6 +27,7 @@ public class Player implements Runnable {
    
     private static volatile boolean gameOver = false;
     private static volatile int winnerID = -1; //Global variable across all player threads
+
     /**
      * Constructs a new Player with an ID 
      * @param playerID the unique identifier for the player.
@@ -43,6 +46,7 @@ public class Player implements Runnable {
 
     /**
      * Adds a card to the player's hand.
+     * 
      * @param card the card to add.
      */
     public void addCardToHand(Card card) {
@@ -53,6 +57,8 @@ public class Player implements Runnable {
      * Returns a copy of the player's hand.
      * Creates a new ArrayList containing the same card references to protect internal state 
      * encapsulation and prevent ConcurrentModificationException across threads.
+     * 
+     * @return a new List containing the cards in the player's hand.
      */
     public List<Card> getHand() {
         return new ArrayList<>(hand);
@@ -84,13 +90,15 @@ public class Player implements Runnable {
         }
         return true;
     }
+
     /**
      * Selects a non-preferred card to discard.
      * The preferred denomination matches the player's ID.
+     * Doesn't need to be synchronized because it's only called within a synchronized block in run().
      * 
-     * @return The Card selected for discarding.
+     * @return the card selected for discarding.
      */
-    private Card chooseCardToDiscard() {    // Doesn't need to be synchronized because it's only called within a synchronized block in run()
+    private Card chooseCardToDiscard() {  
         List<Card> nonPreferred = new ArrayList<>();
         for (Card card : hand) {
             if (card.getValue() != playerID) {
@@ -110,6 +118,8 @@ public class Player implements Runnable {
     /**
      * Handles winning operations: updating global flags, printing to terminal,
      * and writing winning details to the output file.
+     * 
+     * @throws IOException
      */
     private void declareWin() throws IOException {
         synchronized (Player.class) {
@@ -131,8 +141,10 @@ public class Player implements Runnable {
         }
     }
 
-    /*
-     * Draws a card from the left deck and discards a card from the hand to the right deck atomically
+    /**
+     * Draws a card from the left deck and discards a card from the hand to the right deck atomically.
+     * 
+     * @throws IOException
      */
     public void drawAndDiscard() throws IOException {
          // We want to avoid circular wait conditions, so we always acquire locks in order of increasing deck ID.
@@ -144,43 +156,52 @@ public class Player implements Runnable {
                     lock1 = rightDeck;  
                     lock2 = leftDeck;
                 } 
+
+                // Variable for output text
+                String logMessage = null;
+                    
                 synchronized (lock1) {
                     synchronized (lock2) {
-                        // Atomic draw-and-discard action
                         Card drawnCard = leftDeck.drawCard();
                         if (drawnCard != null) {
                             hand.add(drawnCard);
-                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
-                                writer.write("player " + playerID + " draws a " + drawnCard.getValue() + " from deck " + leftDeck.getId());
-                                writer.newLine();
-                                Card discardCard = chooseCardToDiscard();
-                                hand.remove(discardCard);
-                                rightDeck.addCard(discardCard);
-                                writer.write("player " + playerID + " discards a " + discardCard.getValue() + " to deck " + rightDeck.getId());
-                                writer.newLine();
-
-                                writer.write("player " + playerID + " current hand is " + getHandString());
-                                writer.newLine();
-                            }
-                            if (checkWinCondition()) {
-                                declareWin();
-                            }
+                            Card discardCard = chooseCardToDiscard();
+                            hand.remove(discardCard);
+                            rightDeck.addCard(discardCard);
+                            
+                            // Construct the log message to write to the output file after releasing locks
+                            logMessage = "player " + playerID + " draws a " + drawnCard.getValue() + " from deck " + leftDeck.getId() + "\n" +
+                                        "player " + playerID + " discards a " + discardCard.getValue() + " to deck " + rightDeck.getId() + "\n" +
+                                        "player " + playerID + " current hand is " + getHandString();
                         } else {
-                            return; // If the draw deck is empty, skip this turn
+                            return; // Skip this turn if the left deck is empty
                         }
+                    }
+                }
+                
+                // Write the log message to the output file after releasing locks
+                if (logMessage != null) {
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+                        writer.write(logMessage);
+                        writer.newLine();
+                    }
+                    if (checkWinCondition()) {
+                        declareWin();
                     }
                 }
     }
 
+    /**
+     * Returns a string representation of the player's current hand.
+     * 
+     * @return a space-separated string of card values in the hand.
+     */
     private String getHandString() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hand.size(); i++) {
-            sb.append(hand.get(i).getValue());
-            if (i < hand.size() - 1) {
-                sb.append(" ");
-            }
+        for (Card c : hand) {
+            sb.append(c.getValue()).append(" ");
         }
-        return sb.toString();
+        return sb.toString().trim(); // Remove the last space for cleaner output
     }
 
     /**

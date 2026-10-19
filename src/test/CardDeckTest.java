@@ -1,7 +1,21 @@
 // CardDeckTest.java
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+package test;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
+import cardgame.Card;
+import cardgame.CardDeck;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -9,6 +23,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Unit tests for the CardDeck class.
  */
 public class CardDeckTest {
+    /**
+     * Clean up any generated output files after each test to maintain a clean test environment.
+     * 
+     * @throws IOException 
+     */
+    @AfterEach
+    public void tearDown() throws IOException {
+        // Removes the file generated in testDeckOutputFileContent()
+        Files.deleteIfExists(Path.of("deck1_output.txt"));
+    }
+
     /**
      * Tests that the deck ID is set correctly upon creation.
      */
@@ -55,10 +80,12 @@ public class CardDeckTest {
     /**
      * Tests that adding a null card to the deck throws an IllegalArgumentException.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddNullCard() {
         CardDeck d = new CardDeck(1);
-        d.addCard(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            d.addCard(null);
+        });
     }
 
     /**
@@ -128,7 +155,8 @@ public class CardDeckTest {
     /**
      * Tests the thread-safety of CardDeck by concurrent adding from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentAdd() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numThreads = 10;
@@ -168,7 +196,8 @@ public class CardDeckTest {
    /**
      * Tests the thread-safety of CardDeck by concurrent drawing from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentDraw() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numThreads = 10;
@@ -214,7 +243,8 @@ public class CardDeckTest {
     /**
      * Tests the thread-safety of CardDeck by concurrent adding and drawing from multiple threads.
      */
-    @Test(timeout = 5000) // Timeout to assure liveness
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS) // Timeout to assure liveness
     public void testConcurrentAddAndDraw() throws InterruptedException {
         final CardDeck d = new CardDeck(1);
         final int numAdders = 5;
@@ -268,5 +298,31 @@ public class CardDeckTest {
         assertEquals(totalTargetCards, totalDrawnCount.get());
         // Check that the deck is now empty after all operations
         assertEquals(0, d.getSize());
+    }
+
+    /**
+     * Tests that the output file for the deck is generated correctly and contains the expected content.
+     */
+    @Test
+    public void testDeckOutputFileContent() throws IOException {
+        CardDeck deck = new CardDeck(1);
+        
+        deck.addCard(new Card(5));
+        deck.addCard(new Card(12));
+
+        // This method would be called by CardGame once the game has finished
+        deck.writeOutput();
+
+        // Check that the output file was created
+        Path path = Path.of("deck1_output.txt");
+        assertTrue(Files.exists(path), "deck1_output.txt must be generated upon execution.");
+
+        // Read the output file and verify its not empty
+        List<String> lines = Files.readAllLines(path);
+        assertFalse(lines.isEmpty(), "The output file should not be empty.");
+
+        // Check the format of the contents
+        assertEquals("deck1 contents: 5 12", lines.get(0),
+                "The output file should contain the correct deck contents.");
     }
 }
